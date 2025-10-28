@@ -145,6 +145,7 @@ def add_data_options(parser):
         default=None,
         choices=[
             "amass",
+            "gait",
         ],
         type=str,
         help="Dataset name (choose from list).",
