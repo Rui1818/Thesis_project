@@ -11,7 +11,9 @@
 import numpy as np
 import torch as th
 
-from .diffusion_model import DiffusionModel
+from diffusion.gait_diffusion import GaitDiffusionModel
+
+#from .diffusion_model import DiffusionModel
 
 
 def space_timesteps(num_timesteps, section_counts):
@@ -70,7 +72,7 @@ def space_timesteps(num_timesteps, section_counts):
     return set(all_steps)
 
 
-class SpacedDiffusion(DiffusionModel):
+class SpacedDiffusion(GaitDiffusionModel):
     """
     A diffusion process which can skip steps in a base diffusion process.
 
@@ -84,7 +86,7 @@ class SpacedDiffusion(DiffusionModel):
         self.timestep_map = []
         self.original_num_steps = len(kwargs["betas"])
 
-        base_diffusion = DiffusionModel(**kwargs)
+        base_diffusion = GaitDiffusionModel(**kwargs)
         last_alpha_cumprod = 1.0
         new_betas = []
         for i, alpha_cumprod in enumerate(base_diffusion.alphas_cumprod):

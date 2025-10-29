@@ -34,7 +34,7 @@ class GaitDiffusionModel(GaussianDiffusion):
 
         loss = torch.mean(
             torch.norm(
-                (a - b).reshape(-1, 6),
+                (a - b).reshape(-1, 3),
                 2,
                 1,
             )
@@ -45,7 +45,6 @@ class GaitDiffusionModel(GaussianDiffusion):
     def training_losses(
         self, model, x_start, t, cond, model_kwargs=None, noise=None, dataset=None
     ):
-        #TODO implement loss
 
         if model_kwargs is None:
             model_kwargs = {}
@@ -101,12 +100,12 @@ class GaitDiffusionModel(GaussianDiffusion):
 
             assert model_output.shape == target.shape == x_start.shape
 
-            terms["rot_mse"] = self.masked_l2(
+            terms["keypoint_mse"] = self.masked_l2(
                 target,
                 model_output,
             )
 
-            terms["loss"] = terms["rot_mse"] + terms.get("vb", 0.0)
+            terms["loss"] = terms["keypoint_mse"] + terms.get("vb", 0.0)
 
         else:
             raise NotImplementedError(self.loss_type)

@@ -69,7 +69,7 @@ class MotionDataset(Dataset):
         #sequence padding or random cropping to fit input length
         if seqlen <= self.input_motion_length:
             frames_to_add = self.input_motion_length - seqlen
-            padding = torch.zeros(frames_to_add, motion.shape[1], motion.shape[2], dtype=motion.dtype)
+            padding = torch.zeros(frames_to_add, motion.shape[1], dtype=motion.dtype)
             motion = torch.cat([motion, padding], dim=0)
         else:
             idx = torch.randint(0, int(seqlen - self.input_motion_length), (1,))[0]
@@ -77,7 +77,7 @@ class MotionDataset(Dataset):
         
         if seqlen_wo <= self.input_motion_length:
             frames_to_add = self.input_motion_length - seqlen_wo
-            padding = torch.zeros(frames_to_add, motion_w_o.shape[1], motion_w_o.shape[2], dtype=motion_w_o.dtype)
+            padding = torch.zeros(frames_to_add, motion_w_o.shape[1], dtype=motion_w_o.dtype)
             motion_w_o = torch.cat([motion_w_o, padding], dim=0)
         else:
             idx = torch.randint(0, int(seqlen_wo - self.input_motion_length), (1,))[0]
@@ -118,8 +118,9 @@ def load_data(motion_path, split, **kwargs):
                     file_path = os.path.join(motion_path, patient, file_name, "vitpose", "keypoints_3d", "smpl-keypoints-3d_cut.npy")
                     clean_keypoints = np.load(file_path)  # shape (frames, 25, 5)
                     clean_keypoints = drop_duplicate_frames(clean_keypoints)
-                    #reshape to (frame, 125)
-                    clean_keypoints = clean_keypoints.reshape(-1, 125)
+                    #reshape to (frame, 75)
+                    clean_keypoints=clean_keypoints[...,:3]
+                    clean_keypoints = clean_keypoints.reshape(-1, 75)
                     tensor = torch.tensor(clean_keypoints, dtype=torch.float32)
                     motion_clean.append(tensor)
 
@@ -127,8 +128,9 @@ def load_data(motion_path, split, **kwargs):
                     orth_path = take[0]+'_c2_'+"_".join(take[2:])
                     file_path= os.path.join(motion_path, patient, orth_path, "vitpose", "keypoints_3d", "smpl-keypoints-3d_cut.npy")
                     no_orth_keypoints = drop_duplicate_frames(np.load(file_path))  # shape (frames, 25, 5)
-                    #reshape to (frame, 125)
-                    no_orth_keypoints = no_orth_keypoints.reshape(-1, 125)
+                    #reshape to (frame, 75)
+                    no_orth_keypoints=no_orth_keypoints[...,:3]
+                    no_orth_keypoints = no_orth_keypoints.reshape(-1, 75)
                     orth_tensor = torch.tensor(no_orth_keypoints, dtype=torch.float32)
                     motion_w_o.append(orth_tensor)
         if not motion_clean:
