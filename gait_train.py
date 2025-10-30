@@ -7,7 +7,6 @@ import numpy as np
 import torch
 
 from data_loaders.dataloader3d import get_dataloader, load_data, MotionDataset
-from model.networks import PureMLP
 from runner.train_mlp import train_step
 from runner.training_loop import TrainLoop
 

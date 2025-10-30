@@ -1,4 +1,3 @@
-import glob
 import os
 
 import numpy as np
@@ -28,6 +27,12 @@ def drop_duplicate_frames(data):
     mask = ~all_rows_same
     return data[mask]
 
+def subtract_root(data):
+    #only after frames have been cut
+    #also deletes 0 row
+    root = (data[0,8,:]+data[0, 9, :])/2
+
+    return np.delete((data - root), 1, axis=1)
 
 class MotionDataset(Dataset):
     def __init__(
@@ -118,9 +123,10 @@ def load_data(motion_path, split, **kwargs):
                     file_path = os.path.join(motion_path, patient, file_name, "vitpose", "keypoints_3d", "smpl-keypoints-3d_cut.npy")
                     clean_keypoints = np.load(file_path)  # shape (frames, 25, 5)
                     clean_keypoints = drop_duplicate_frames(clean_keypoints)
-                    #reshape to (frame, 75)
+                    #reshape to (frame, 72)
                     clean_keypoints=clean_keypoints[...,:3]
-                    clean_keypoints = clean_keypoints.reshape(-1, 75)
+                    clean_keypoints = subtract_root(clean_keypoints)
+                    clean_keypoints = clean_keypoints.reshape(-1, 72)
                     tensor = torch.tensor(clean_keypoints, dtype=torch.float32)
                     motion_clean.append(tensor)
 
@@ -128,9 +134,10 @@ def load_data(motion_path, split, **kwargs):
                     orth_path = take[0]+'_c2_'+"_".join(take[2:])
                     file_path= os.path.join(motion_path, patient, orth_path, "vitpose", "keypoints_3d", "smpl-keypoints-3d_cut.npy")
                     no_orth_keypoints = drop_duplicate_frames(np.load(file_path))  # shape (frames, 25, 5)
-                    #reshape to (frame, 75)
+                    #reshape to (frame, 72)
                     no_orth_keypoints=no_orth_keypoints[...,:3]
-                    no_orth_keypoints = no_orth_keypoints.reshape(-1, 75)
+                    no_orth_keypoints = subtract_root(no_orth_keypoints)
+                    no_orth_keypoints = no_orth_keypoints.reshape(-1, 72)
                     orth_tensor = torch.tensor(no_orth_keypoints, dtype=torch.float32)
                     motion_w_o.append(orth_tensor)
         if not motion_clean:
