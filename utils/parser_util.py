@@ -109,10 +109,10 @@ def add_model_options(parser):
         help="Architecture types as reported in the paper.",
     )
     group.add_argument(
-        "--motion_nfeat", default=132, type=int, help="motion feature dimension"
+        "--motion_nfeat", default=72, type=int, help="motion feature dimension"
     )
     group.add_argument(
-        "--sparse_dim", default=54, type=int, help="sparse signal feature dimension"
+        "--sparse_dim", default=72, type=int, help="sparse signal feature dimension"
     )
     group.add_argument("--layers", default=8, type=int, help="Number of layers.")
     group.add_argument(
