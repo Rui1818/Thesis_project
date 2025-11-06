@@ -5,6 +5,22 @@ from aitviewer.renderables.smpl import SMPLSequence
 from aitviewer.viewer import Viewer
 from aitviewer.renderables.point_clouds import PointClouds
 from plyfile import PlyData
+from aitviewer.renderables.skeletons import Skeletons
+import argparse
+
+
+class BODY25Skeletons(Skeletons):
+    SKELETON = np.asarray([
+        (-1, 0), (0, 8), (9, 10), (10, 11), (8, 9), (8, 12),
+        (12, 13), (13, 14), (0, 2), (2, 3), (3, 4), (2, 17),
+        (0, 5), (5, 6), (6, 7), (5, 18), (0, 15),
+        (0, 16), (15, 17), (16, 18), (14, 19), (19, 20), (14, 21),
+        (11, 22), (22, 23), (11, 24)
+    ])
+
+    def __init__(self, joints, **kwargs):
+        kwargs['color'] = (0.5, 0.0, 0.0, 1.0)
+        super().__init__(joints, __class__.SKELETON, **kwargs)
 
 def add_keypoints(path, viewer, thisname, color=(1.0, 0.0, 0.0, 1)):
     # Load keypoints
@@ -18,89 +34,71 @@ def add_keypoints(path, viewer, thisname, color=(1.0, 0.0, 0.0, 1)):
         point_size=3.0,
         color=color
     )
-    viewer.scene.add(keypoints_pc)
+    skeleton=BODY25Skeletons(keypoints, name='Skeletonkeypoints')
+    #viewer.scene.add(keypoints_pc)
+    viewer.scene.add(skeleton)
     return
+
+def visualize_gait(keypoints_path, smplseq_path=None):
+    v = Viewer()
+    add_keypoints(keypoints_path, v, "my Keypoints")
+
+    if smplseq_path is not None:
+        data = np.load(smplseq_path)
+    
+        # smplx parameters
+        body_pose = data['body_pose']           # (419, 63)
+        #print(body_pose.shape)
+        global_orient = data['global_orient']   # (419, 3)
+        betas = data['betas']                   # (419, 11)
+        transl = data['transl']                 # (419, 3)
+        left_hand_pose = data['left_hand_pose'] # (419, 12) - PCA components
+        right_hand_pose = data['right_hand_pose'] # (419, 12) - PCA components
+        
+        print(f"Loaded sequence with {body_pose.shape[0]} frames")
+        
+        # Create SMPL-X layer with PCA hand pose support
+        smpl_layer = SMPLLayer(
+            model_type="smplx", 
+            gender="neutral", 
+            device=C.device,
+            age="kid",
+            kid_template_path=r"C:\Users\Rui\Vorlesungskript\Master\Thesis\test\smpl_models\smplx\smplx_kid_template.npy",
+            use_pca=True, 
+            num_pca_comps=12,  
+            flat_hand_mean=False
+        )
+        smpl_layer.num_betas += 1
+        
+        # Create SMPL-X sequence
+        # When use_pca=True, the layer expects 12-dimensional hand poses
+        smpl_sequence = SMPLSequence(
+            poses_body=body_pose,
+            poses_root=global_orient,
+            betas=betas,
+            trans=transl,
+            poses_left_hand=left_hand_pose,
+            poses_right_hand=right_hand_pose,
+            smpl_layer=smpl_layer,
+            name="SMPL-X Sequence",
+        )
+        v.scene.add(smpl_sequence)
+
+    v.run()
     
 
 if __name__ == "__main__":
     # Set the path to your SMPL models
     C.smplx_models = "smpl_models/"
+    """
+    parser = argparse.ArgumentParser(description="My command-line program")
+
+    # Add arguments
+    parser.add_argument("--keypointspath", type=str, help="Path to the keypoints file")
+    parser.add_argument("--smplseqpath", type=str, default=None, help="Path to the SMPL sequence file (optional)")
+    """
     take="_c2_a5_2"
-    keypoints_path = "observations/vitpose"+take+""+"/vitpose/keypoints_3d/full-keypoints-3d.npy"
-    smplseq_path="observations/vitpose"+take+"/vitpose/fit-smplx/smplx-params.npz"
-    smplkeypoints_path = "observations/vitpose"+take+""+"/vitpose/keypoints_3d/smpl-keypoints-3d.npy"
-    #smplhkeypoints_path = "observations/vitpose"+take+""+"/vitpose/keypoints_3d/smplh-keypoints-3d.npy"
-    #smplxkeypoints_path = "observations/vitpose"+take+""+"/vitpose/keypoints_3d/smplx-keypoints-3d.npy"
-    
+    keypoints_path = "data_example/700/vitpose_c1_a4/vitpose/keypoints_3d/smpl-keypoints-3d_cut.npy"
 
 
-    data = np.load(smplseq_path)
-    
-    # smplx parameters
-    body_pose = data['body_pose']           # (419, 63)
-    print(body_pose.shape)
-    global_orient = data['global_orient']   # (419, 3)
-    betas = data['betas']                   # (419, 11)
-    transl = data['transl']                 # (419, 3)
-    left_hand_pose = data['left_hand_pose'] # (419, 12) - PCA components
-    right_hand_pose = data['right_hand_pose'] # (419, 12) - PCA components
-    
-    print(f"Loaded sequence with {body_pose.shape[0]} frames")
-    
-    # Create SMPL-X layer with PCA hand pose support
-    smpl_layer = SMPLLayer(
-        model_type="smplx", 
-        gender="neutral", 
-        device=C.device,
-        age="kid",
-        kid_template_path=r"C:\Users\Rui\Vorlesungskript\Master\Thesis\test\smpl_models\smplx\smplx_kid_template.npy",
-        use_pca=True, 
-        num_pca_comps=12,  
-        flat_hand_mean=False
-    )
-    smpl_layer.num_betas += 1
-    
-    # Create SMPL-X sequence
-    # When use_pca=True, the layer expects 12-dimensional hand poses
-    smpl_sequence = SMPLSequence(
-        poses_body=body_pose,
-        poses_root=global_orient,
-        betas=betas,
-        trans=transl,
-        poses_left_hand=left_hand_pose,
-        poses_right_hand=right_hand_pose,
-        smpl_layer=smpl_layer,
-        name="SMPL-X Sequence",
-    )
-    
-    # Load floor point cloud from PLY file
-    ply_data = PlyData.read("floor/floor_c1_a3.ply")
-    vertices = ply_data['vertex']
-    floor_points = np.vstack([vertices['x'], vertices['y'], vertices['z']]).T
-    
-    # Create point cloud (add a frame dimension if needed)
-    floor_pc = PointClouds(floor_points[np.newaxis, :, :], name="MyFloor", point_size=2.0)
-    
-    # Load keypoints
-    keypoints = np.load(keypoints_path)
-
-    keypoints = keypoints[..., :3]
-
-    keypoints_pc = PointClouds(
-        keypoints,
-        name="FULL Keypoints",
-        point_size=3.0,
-        color=(1.0, 1.0, 0.0, 1)
-    )
-    print(keypoints.shape)
-
-    
-    # Display in viewer
-    v = Viewer()
-    #v.scene.add(keypoints_pc)
-    add_keypoints(smplkeypoints_path, v, "SMPL Keypoints")
-    #add_keypoints(smplxkeypoints_path, v, "SMPLX Keypoints")
-    v.scene.add(smpl_sequence)
-    v.scene.add(floor_pc)
-
-    v.run()
+    visualize_gait(keypoints_path)
