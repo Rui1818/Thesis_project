@@ -155,7 +155,7 @@ def get_dataloader(
     dataset,
     split,
     batch_size,
-    num_workers=32,
+    num_workers=8,
 ):
 
     if split == "train":
