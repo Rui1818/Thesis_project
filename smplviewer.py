@@ -37,6 +37,7 @@ def add_keypoints(path, viewer, thisname, color=(1.0, 0.0, 0.0, 1)):
     skeleton=BODY25Skeletons(keypoints, name='Skeletonkeypoints')
     #viewer.scene.add(keypoints_pc)
     viewer.scene.add(skeleton)
+    viewer.scene.add(keypoints_pc)
     return
 
 def visualize_gait(keypoints_path, smplseq_path=None):

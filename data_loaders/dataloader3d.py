@@ -34,15 +34,6 @@ def subtract_root(data):
 
     return np.delete((data - root), 1, axis=1)
 
-def padding_to_length(tensor, target_length):
-    current_length = tensor.shape[0]
-    if current_length >= target_length:
-        return tensor
-    else:
-        frames_to_add = target_length - current_length
-        padding = torch.zeros(frames_to_add, tensor.shape[1], dtype=tensor.dtype)
-        return torch.cat([tensor, padding], dim=0)
-
 class MotionDataset(Dataset):
     def __init__(
         self,
@@ -79,7 +70,7 @@ class MotionDataset(Dataset):
         motion_w_o = self.motion_without_orth[idx % len(self.motion_clean)]
         seqlen = motion.shape[0]
         seqlen_wo = motion_w_o.shape[0]
-
+        random=torch.randint(0, int(seqlen - self.input_motion_length), (1,))[0] if seqlen > self.input_motion_length else 0
         #sequence padding or random cropping to fit input length
         if seqlen <= self.input_motion_length:
             if seqlen > 0:
@@ -88,9 +79,8 @@ class MotionDataset(Dataset):
                 padding = last_frame.repeat(frames_to_add, 1)
                 motion = torch.cat([motion, padding], dim=0)
         else:
-            idx = torch.randint(0, int(seqlen - self.input_motion_length), (1,))[0]
-            motion = motion[idx : idx + self.input_motion_length]
-        
+            motion = motion[random : random + self.input_motion_length]
+
         if seqlen_wo <= self.input_motion_length:
             if seqlen_wo > 0:
                 frames_to_add = self.input_motion_length - seqlen_wo
@@ -98,8 +88,7 @@ class MotionDataset(Dataset):
                 padding_wo = last_frame_wo.repeat(frames_to_add, 1)
                 motion_w_o = torch.cat([motion_w_o, padding_wo], dim=0)
         else:
-            idx = torch.randint(0, int(seqlen_wo - self.input_motion_length), (1,))[0]
-            motion_w_o = motion_w_o[idx : idx + self.input_motion_length]
+            motion_w_o = motion_w_o[random : random + self.input_motion_length]
 
         """
         # Normalization

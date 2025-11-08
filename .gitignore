@@ -4,3 +4,4 @@ human_body_prior
 *_fb.py
 pretrained_weights/
 data_example/
+observations/
